@@ -18,7 +18,7 @@ function App() {
 
     setLoading(true)
 
-    axios.post('http://localhost:8000/ask',{question})
+    axios.post('https://chat-with-debansu-backend.onrender.com/ask',{question})
     .then((res)=>res.data)
     .then((finalRes)=>{
       console.log(finalRes);
