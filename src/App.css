@@ -206,12 +206,6 @@
 .message-wrapper {
   display: flex;
   width: 100%;
-  animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .message-wrapper.user {
@@ -357,6 +351,18 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+.disclaimer {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #71717a;
+  margin-top: 12px;
+}
+
+.disclaimer span {
+  color: #a855f7;
+  font-weight: 500;
 }
 
 /* Mobile Responsiveness */
