@@ -1,91 +1,117 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
 import ReactMarkdown from "react-markdown";
+import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
-  let [question,setQuestion]=useState()
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
 
-  let [data,setData]=useState("")
-  let [loading,setLoading]=useState(false)
+  // Auto scroll to bottom
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
 
-  let handleSubmit=(e)=>{
-    e.preventDefault()
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!input.trim() || loading) return;
 
-    setLoading(true)
+    // Add user message
+    const newMessages = [...messages, { role: 'user', content: input }];
+    setMessages(newMessages);
+    const currentQuestion = input;
+    setInput("");
+    setLoading(true);
 
-    axios.post('https://chat-with-debansu-backend-xkgz.vercel.app/ask/',{question})
-    .then((res)=>res.data)
-    .then((finalRes)=>{
-      console.log(finalRes);
-      if(finalRes._status){
-        setData(finalRes.finalData)
-      }
-    })
-    .finally(()=>{
-      setLoading(false)
-    })
-
-    console.log(question);
+    axios.post('https://chat-with-debansu-backend-xkgz.vercel.app/ask/', { question: currentQuestion })
+      .then((res) => {
+        if (res.data._status) {
+          setMessages([...newMessages, { role: 'bot', content: res.data.finalData }]);
+        } else {
+          setMessages([...newMessages, { role: 'bot', content: "An error occurred fetching the response." }]);
+        }
+      })
+      .catch(() => {
+         setMessages([...newMessages, { role: 'bot', content: "Server connection failed." }]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }
 
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
-        
-        <h1 className="text-center font-extrabold text-3xl md:text-5xl mb-6 pt-6 text-gray-800">
-          🤖 Chat with Debansu
-        </h1>
+    <div className="app-container">
+      {/* Cool animated background elements */}
+      <div className="bg-glow blob-1"></div>
+      <div className="bg-glow blob-2"></div>
+      <div className="bg-glow blob-3"></div>
+      
+      <main className="chat-interface">
+        <header className="chat-header glass-panel">
+          <div className="avatar-orb">
+            <div className="inner-orb"></div>
+          </div>
+          <div className="header-text">
+            <h1>Chat with <span>Debansu</span></h1>
+            <span className="status-badge">
+              <span className="pulse-dot"></span> Online
+            </span>
+          </div>
+        </header>
 
-        <div className="max-w-[1320px] mx-auto grid grid-cols-1 md:grid-cols-[35%_auto] gap-6 p-4">
-
-          {/* LEFT PANEL (FORM) */}
-          <form 
-            onSubmit={handleSubmit} 
-            className="order-2 md:order-1 backdrop-blur-lg bg-white/60 shadow-xl p-5 rounded-2xl border border-white/40"
-          >
-
-            <textarea 
-              value={question} 
-              onChange={(e)=>setQuestion(e.target.value)}
-              className="w-full p-4 h-[150px] md:h-[200px] border border-gray-300 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-purple-400"
-              placeholder="Ask anything..."
-            />
-
-            <button 
-              className="w-full py-2 rounded-xl text-white font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 hover:scale-105 transition-transform duration-200 shadow-md"
-            >
-              ✨ Generate
-            </button>
-
-          </form>
-
-          {/* RIGHT PANEL (RESPONSE) */}
-          <div className="order-1 md:order-2 backdrop-blur-lg bg-white/60 shadow-xl rounded-2xl border border-white/40 flex flex-col">
-
-            <div className="h-[250px] md:h-[300px] overflow-y-auto p-4 space-y-3">
-
-              {loading ? (
-                <div className="flex justify-center items-center h-full text-gray-600">
-                  ⏳ Thinking...
+        <section className="chat-history">
+          {messages.length === 0 ? (
+            <div className="empty-state">
+              <div className="sparkle-icon">✨</div>
+              <h2>How can I help you today?</h2>
+              <p>Ask anything and I'll generate a thoughtful response.</p>
+            </div>
+          ) : (
+            <div className="messages-container">
+              {messages.map((msg, idx) => (
+                <div key={idx} className={`message-wrapper ${msg.role}`}>
+                  <div className="message-bubble glass-panel">
+                    {msg.role === 'user' ? (
+                       msg.content
+                    ) : (
+                      <div className="markdown-body">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <div className="bg-white shadow-md rounded-xl p-4 text-gray-800">
-                  <ReactMarkdown>{data}</ReactMarkdown>
+              ))}
+              {loading && (
+                <div className="message-wrapper bot">
+                   <div className="message-bubble typing-indicator glass-panel">
+                     <span></span><span></span><span></span>
+                   </div>
                 </div>
               )}
-
+              <div ref={bottomRef} className="scroll-anchor" />
             </div>
+          )}
+        </section>
 
-          </div>
-
-        </div>
-      </div>
-    </>
+        <footer className="chat-input-area">
+          <form onSubmit={handleSubmit} className="input-form glass-panel">
+            <input 
+              type="text" 
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask anything..."
+              disabled={loading}
+              autoFocus
+            />
+            <button type="submit" disabled={!input.trim() || loading} className="send-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+          </form>
+        </footer>
+      </main>
+    </div>
   )
 }
 
